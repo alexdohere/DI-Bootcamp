@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Emoji Guessing Game</title>
+  </head>
+  <body>
+    <h1>Emoji Guessing Game</h1>
+    <div id="game"></div>
+    <div id="feedback"></div>
+    <h2>Score: <span id="score">0</span></h2>
+    <h2>Leaderboard:</h2>
+    <ul id="leaderboard"></ul>
+    <script>
+      let currentScore = 0;
+
+      const fetchQuestion = async () => {
+        const response = await fetch("http://localhost:5000/api/question");
+        const data = await response.json();
+        displayQuestion(data);
+      };
+
+      const displayQuestion = ({ emoji, options }) => {
+        const gameDiv = document.getElementById("game");
+        gameDiv.innerHTML = `<h2>${emoji}</h2>`;
+        options.forEach((option) => {
+          gameDiv.innerHTML += `<button onclick="submitGuess('${option}')">${option}</button>`;
+        });
+      };
+
+      const submitGuess = async (guess) => {
+        const response = await fetch("http://localhost:5000/api/guess", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name: guess, score: currentScore }),
+        });
+        const result = await response.json();
+        if (result.correct) {
+          currentScore++;
+          document.getElementById("feedback").innerText = "Correct!";
+        } else {
+          document.getElementById("feedback").innerText = "Wrong!";
+        }
+        document.getElementById("score").innerText = currentScore;
+        fetchQuestion();
+      };
+
+      const fetchLeaderboard = async () => {
+        const response = await fetch("http://localhost:5000/api/leaderboard");
+        const leaderboard = await response.json();
+        const leaderboardDiv = document.getElementById("leaderboard");
+        leaderboardDiv.innerHTML = "";
+        leaderboard.forEach((score) => {
+          leaderboardDiv.innerHTML += `<li>${score}</li>`;
+        });
+      };
+
+      fetchQuestion();
+      fetchLeaderboard();
+    </script>
+  </body>
+</html>
